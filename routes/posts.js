@@ -1,60 +1,37 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+// const multer = require("multer");
+// const upload = multer({ dest: "uploads/" });
+const { asyncErrorHandler } = require("../middleware");
+const {
+  postIndex,
+  postNew,
+  postCreate,
+  postShow,
+  postEdit,
+  postUpdate,
+  postDestroy,
+} = require("../controllers/posts");
 
-/**
- * GET /posts
- * Return a list of posts
- */
-router.get('/', (req, res) => {
-  res.status(200).send('List of posts');
-});
+/* GET posts index /posts */
+router.get("/", asyncErrorHandler(postIndex));
 
-/**
- * GET /posts/new
- * Show form to create a new post
- */
-router.get('/new', (req, res) => {
-  res.status(200).send('Form to create a new post');
-});
+/* GET posts new /posts/new */
+router.get("/new", postNew);
 
-/**
- * GET /posts/:id/edit
- * Show form to edit an existing post
- */
-router.get('/:id/edit', (req, res) => {
-  res.status(200).send(`Edit post with ID ${req.params.id}`);
-});
+/* POST posts create /posts */
+router.post("/", upload.array("images", 4), asyncErrorHandler(postCreate));
 
-/**
- * GET /posts/:id
- * Show a specific post
- */
-router.get('/:id', (req, res) => {
-  res.status(200).send(`Show post with ID ${req.params.id}`);
-});
+/* GET posts show /posts/:id */
+router.get("/:id", asyncErrorHandler(postShow));
 
-/**
- * POST /posts
- * Create a new post
- */
-router.post('/', (req, res) => {
-  res.status(201).send(`Created a new post: ${JSON.stringify(req.body)}`);
-});
+/* GET posts edit /posts/:id/edit */
+router.get("/:id/edit", asyncErrorHandler(postEdit));
 
-/**
- * PUT /posts/:id
- * Update an existing post
- */
-router.put('/:id', (req, res) => {
-  res.status(200).send(`Updated post with ID ${req.params.id}: ${JSON.stringify(req.body)}`);
-});
+/* PUT posts update /posts/:id */
+router.put("/:id", upload.array("images", 4), asyncErrorHandler(postUpdate));
 
-/**
- * DELETE /posts/:id
- * Delete a post
- */
-router.delete('/:id', (req, res) => {
-  res.status(200).send(`Deleted post with ID ${req.params.id}`);
-});
+/* DELETE posts destroy /posts/:id */
+router.delete("/:id", asyncErrorHandler(postDestroy));
 
 module.exports = router;
