@@ -1,6 +1,6 @@
 const Post = require("../models/post");
 const cloudinary = require("cloudinary").v2;
-
+const fs = require("fs").promises;
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -28,12 +28,16 @@ module.exports = {
   async postCreate(req, res, next) {
     try {
       const images = [];
+
       for (const file of req.files || []) {
         const image = await cloudinary.uploader.upload(file.path);
         images.push({
           url: image.secure_url,
           public_id: image.public_id,
         });
+
+        // 🧹 Delete local temp file
+        await fs.unlink(file.path);
       }
 
       const postData = {
@@ -76,7 +80,7 @@ module.exports = {
       const post = await Post.findById(req.params.id);
       if (!post) return next();
 
-      // Handle deletions
+      // Delete selected images from Cloudinary
       if (Array.isArray(req.body.deleteImages)) {
         for (const public_id of req.body.deleteImages) {
           await cloudinary.uploader.destroy(public_id);
@@ -86,16 +90,19 @@ module.exports = {
         }
       }
 
-      // Handle new uploads
+      // Upload new images
       for (const file of req.files || []) {
         const image = await cloudinary.uploader.upload(file.path);
         post.images.push({
           url: image.secure_url,
           public_id: image.public_id,
         });
+
+        // 🧹 Delete local temp file
+        await fs.unlink(file.path);
       }
 
-      // Update fields
+      // Update other fields
       const { title, description, price, location } = req.body.post;
       Object.assign(post, { title, description, price, location });
 
