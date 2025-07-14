@@ -1,4 +1,4 @@
-<h1>Edit Post!</h1>
+<h1>Edit Post</h1>
 
 <form
   action="/posts/<%= post.id %>?_method=PUT"
@@ -11,83 +11,106 @@
       type="text"
       name="post[title]"
       placeholder="Title"
-      value="<%= post.title  %>"
+      value="<%= post.title %>"
+      required
     />
   </div>
+
   <div>
     <input
       type="text"
       name="post[price]"
       placeholder="Price"
-      value="<%= post.price  %>"
+      value="<%= post.price %>"
+      required
     />
   </div>
+
   <div>
     <input
       type="file"
       id="imageUpload"
-      accept="images/*"
+      accept="image/*"
       name="images"
       multiple
     />
     <div>
       <% post.images.forEach(function(image, i) { %>
-      <img src="<%= image.url %>" width="100px" />
-      <label for="image<%= i %>">Delete?</label>
-      <input
-        type="checkbox"
-        name="deleteImages[]"
-        class="imageDeleteCheckbox"
-        id="image<%= i %>"
-        value="<%= image.public_id %>"
-      />
+      <div style="margin-bottom: 10px">
+        <img
+          src="<%= image.url %>"
+          width="100"
+          alt="Uploaded image <%= i + 1 %>"
+        />
+        <label for="image<%= i %>">
+          <input
+            type="checkbox"
+            name="deleteImages[]"
+            class="imageDeleteCheckbox"
+            id="image<%= i %>"
+            value="<%= image.public_id %>"
+          />
+          Delete this image
+        </label>
+      </div>
       <% }); %>
     </div>
   </div>
+
   <div>
-    <textarea name="post[description]" placeholder="Description">
-<%= post.description  %></textarea
+    <textarea
+      name="post[description]"
+      placeholder="Description"
+      rows="5"
+      required
+    >
+<%= post.description %></textarea
     >
   </div>
+
   <div>
     <input
       type="text"
       name="post[location]"
       placeholder="Location"
-      value="<%= post.location  %>"
+      value="<%= post.location %>"
+      required
     />
   </div>
 
-  <input type="submit" />
-</form>
+  <button type="submit">Update Post</button>
+  <button
+    type="button"
+    onclick="window.location.href='/posts/<%= post.id %>'"
+    style="margin-left: 10px"
+  >
+    Cancel
+  </button>
 
-<script>
-  // find post edit form
-  let postEditForm = document.getElementById("postEditForm");
-  // add submit listener to post edit form
-  postEditForm.addEventListener("submit", function (event) {
-    // find length of uploaded images
-    let imageUploads = document.getElementById("imageUpload").files.length;
-    // find total number of existing images
-    let existingImgs = document.querySelectorAll(".imageDeleteCheckbox").length;
-    // find total number of potential deletions
-    let imgDeletions = document.querySelectorAll(
-      ".imageDeleteCheckbox:checked"
-    ).length;
-    // calculate total after removal of deletions and addition of new uploads
-    let newTotal = existingImgs - imgDeletions + imageUploads;
-    // if newTotal is greater than four
-    if (newTotal > 4) {
-      // prevent form from submitting
-      event.preventDefault();
-      // calculate removal amount
-      let removalAmt = newTotal - 4;
-      // alert user of their error
-      alert(
-        `You need to remove at least ${removalAmt} (more) image${
-          removalAmt === 1 ? "" : "s"
-        }!`
-      );
-    }
-  });
-</script>
+  <script>
+    const postEditForm = document.getElementById("postEditForm");
+
+    postEditForm.addEventListener("submit", function (event) {
+      const imageUploads = document.getElementById("imageUpload").files.length;
+      const existingImages = document.querySelectorAll(
+        ".imageDeleteCheckbox"
+      ).length;
+      const checkedDeletions = document.querySelectorAll(
+        ".imageDeleteCheckbox:checked"
+      ).length;
+
+      const resultingImageCount =
+        existingImages - checkedDeletions + imageUploads;
+
+      if (resultingImageCount > 4) {
+        event.preventDefault();
+        const excess = resultingImageCount - 4;
+        alert(
+          `You need to remove at least ${excess} more image${
+            excess === 1 ? "" : "s"
+          }!`
+        );
+      }
+    });
+  </script>
+</form>

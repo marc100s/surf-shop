@@ -1,81 +1,86 @@
+require("dotenv").config(); // Load environment variables early
+
 const createError = require("http-errors");
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
-const bodyParser = require("body-parser");
 const logger = require("morgan");
 const passport = require("passport");
 const session = require("express-session");
-const User = require("./models/user");
+const methodOverride = require("method-override");
 const mongoose = require("mongoose");
 
-// require routes
+// Models
+const User = require("./models/user");
+
+// Routes
 const indexRouter = require("./routes/index");
 const postsRouter = require("./routes/posts");
 const reviewsRouter = require("./routes/reviews");
 
 const app = express();
 
-// For Node.js/JavaScript
-const uri = "mongodb://localhost:27017/surf-shop";
-// Connect to MongoDB
-mongoose.connect(uri);
+// MongoDB Connection
+const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connection.on("connected", () => console.log("connected"));
-mongoose.connection.on("open", () => console.log("open"));
-mongoose.connection.on("disconnected", () => console.log("disconnected"));
-mongoose.connection.on("reconnected", () => console.log("reconnected"));
-mongoose.connection.on("disconnecting", () => console.log("disconnecting"));
-mongoose.connection.on("close", () => console.log("close"));
+mongoose.connect(MONGO_URI);
 
-// view engine setup
+mongoose.connection.on("connected", () => console.log("MongoDB connected"));
+mongoose.connection.on("error", (err) => console.error("MongoDB error:", err));
+
+mongoose.connection.on("connected", () => console.log("MongoDB connected"));
+mongoose.connection.on("error", (err) => console.error("MongoDB error:", err));
+
+// View engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
+// Middlewares
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.use(methodOverride("_method")); // Support PUT & DELETE from forms
 
-// Configure passport session management
+// Session management
+const isProduction = process.env.NODE_ENV === "production";
+
 app.use(
   session({
-    secret: process.env.SESSION_PWD,
+    secret: process.env.SESSION_PWD || "defaultSecret", // fallback in case env missing
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: true },
+    saveUninitialized: false, // better for login systems
+    cookie: {
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: "lax",
+    },
   })
 );
 
+// Passport setup
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CHANGE: USE "createStrategy" INSTEAD OF "authenticate"
 passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// Mount routes
+// Routes
 app.use("/", indexRouter);
 app.use("/posts", postsRouter);
-// Routes nested under posts (e.g. /posts/:postId/reviews)
-app.use("/posts/:postId/reviews", reviewsRouter);
-// Standalone review routes (e.g. /reviews/:id)
-app.use("/reviews", reviewsRouter);
+app.use("/posts/:postId/reviews", reviewsRouter); // nested
+// Avoid duplicate mount if all reviews are nested under posts
+// app.use("/reviews", reviewsRouter); // Enable only if you need standalone reviews
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
-});
+// Catch 404 and forward to error handler
+app.use((req, res, next) => next(createError(404)));
 
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
+// Error handler
+app.use((err, req, res, next) => {
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
-
-  // render the error page
   res.status(err.status || 500);
   res.render("error");
 });
