@@ -7,8 +7,17 @@ const PostSchema = new Schema({
   description: String,
   images: [{ url: String, public_id: String }],
   location: String,
-  lat: Number,
-  lng: Number,
+  geometry: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      required: true,
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
+  },
   author: {
     type: Schema.Types.ObjectId,
     ref: "User",

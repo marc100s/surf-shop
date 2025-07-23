@@ -1,6 +1,8 @@
 const Post = require("../models/post");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs").promises;
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -40,9 +42,17 @@ module.exports = {
         await fs.unlink(file.path);
       }
 
+      const geoRes = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          req.body.post.location
+        )}.json?access_token=${process.env.MAPBOX_TOKEN}`
+      );
+      const geoData = await geoRes.json();
+
       const postData = {
         ...req.body.post,
         images,
+        geometry: geoData.features[0]?.geometry, // type & coordinates
       };
 
       const post = await Post.create(postData);
@@ -105,6 +115,21 @@ module.exports = {
       // Update other fields
       const { title, description, price, location } = req.body.post;
       Object.assign(post, { title, description, price, location });
+
+      // Geocode location and update geometry
+      const geoRes = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          location
+        )}.json?access_token=${process.env.MAPBOX_TOKEN}`
+      );
+
+      const geoData = await geoRes.json();
+
+      if (!geoData.features.length) {
+        return next(new Error("Invalid location provided."));
+      }
+
+      post.geometry = geoData.features[0].geometry;
 
       await post.save();
       res.redirect(`/posts/${post.id}`);

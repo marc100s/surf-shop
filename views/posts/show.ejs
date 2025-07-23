@@ -1,19 +1,111 @@
-<h1><%= post.title %></h1>
-<div>Price: <%= post.price %></div>
-<div><%= post.description %></div>
-<div><%= post.location %></div>
-<div>
-  <% post.images.forEach(function(image) { %>
-  <img src="<%= image.url %>" alt="Surf board image" width="200px" />
-  <% }); %>
+<!-- Mapbox CSS -->
+<link
+  href="https://api.mapbox.com/mapbox-gl-js/v3.13.0/mapbox-gl.css"
+  rel="stylesheet"
+/>
+
+<!-- Mapbox JS -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.13.0/mapbox-gl.js"></script>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+  }
+
+  .post-details {
+    padding: 1rem;
+  }
+
+  img {
+    margin: 0.5rem;
+    border-radius: 8px;
+  }
+
+  #map {
+    width: 100%;
+    max-width: 600px;
+    height: 300px;
+    margin-top: 1rem;
+    border-radius: 10px;
+  }
+
+  .marker {
+    background-image: url("https://docs.mapbox.com/help/demos/custom-markers-gl-js/mapbox-icon.png");
+    background-size: cover;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .mapboxgl-popup {
+    max-width: 200px;
+  }
+
+  .mapboxgl-popup-content {
+    text-align: center;
+    font-family: "Open Sans", sans-serif;
+  }
+
+  .actions {
+    margin-top: 1rem;
+  }
+
+  .actions button,
+  .actions input[type="submit"] {
+    margin-right: 0.5rem;
+  }
+</style>
+
+<div class="post-details">
+  <h1><%= post.title %></h1>
+  <div><strong>Price:</strong> <%= post.price %></div>
+  <div><%= post.description %></div>
+  <div><strong>Location:</strong> <%= post.location %></div>
+
+  <div>
+    <% post.images.forEach(function(image) { %>
+    <img src="<%= image.url %>" alt="Surfboard image" width="200" />
+    <% }); %>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="actions">
+    <a href="/posts/<%= post.id %>/edit">
+      <button>Edit</button>
+    </a>
+    <form
+      action="/posts/<%= post.id %>?_method=DELETE"
+      method="POST"
+      style="display: inline"
+    >
+      <input type="submit" value="Delete" />
+    </form>
+  </div>
 </div>
-<div>
-  <a href="/posts/<%= post.id %>/edit">
-    <button>Edit</button>
-  </a>
-</div>
-<div>
-  <form action="/posts/<%= post.id %>?_method=DELETE" method="POST">
-    <input type="submit" value="Delete" />
-  </form>
-</div>
+
+<!-- Map Initialization -->
+<script>
+  mapboxgl.accessToken = "<%= process.env.MAPBOX_TOKEN %>";
+
+  const coordinates = <%= JSON.stringify(post.geometry.coordinates) %>;
+
+  const map = new mapboxgl.Map({
+    container: "map",
+    style: "mapbox://styles/mapbox/light-v11",
+    center: coordinates,
+    zoom: 10,
+  });
+
+  new mapboxgl.Marker()
+    .setLngLat(coordinates)
+    .setPopup(
+      new mapboxgl.Popup({ offset: 25 }).setHTML(
+        `<h3><%= post.title %></h3><p><%= post.location %></p>`
+      )
+    )
+    .addTo(map);
+</script>

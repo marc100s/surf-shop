@@ -34,13 +34,14 @@ mongoose.connection.on("error", (err) => console.error("MongoDB error:", err));
 // View engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
+// set public assets directory
+app.use(express.static(path.join(__dirname, "public")));
 
 // Middlewares
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
 app.use(methodOverride("_method")); // Support PUT & DELETE from forms
 
 // Session management
